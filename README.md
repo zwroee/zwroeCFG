@@ -24,3 +24,9 @@ Most other configs out there cost money even though they're literally as simple 
 - Make sure you don't have DS4Windows or other remappers running at the same time.
 
 **If you try to sell this config youre a pussy.**
+
+# gui
+<img width="825" height="679" alt="Screenshot 2026-05-02 083724" src="https://github.com/user-attachments/assets/7aa5d457-df12-4755-bcac-147772b833c5" />
+
+# in game settings that are needed for the config to work.
+<img width="709" height="290" alt="Screenshot 2026-05-02 083805" src="https://github.com/user-attachments/assets/b0cd76ea-93c5-406c-9c07-ece032f1a96f" />
