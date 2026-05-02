@@ -1,0 +1,184 @@
+<Page x:Class="Rebind.Views.MappingPageV2"
+      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+      Title="MappingPageV2">
+
+    <Page.Resources>
+        <Style x:Key="ModernBindButton" TargetType="Button">
+            <Setter Property="Background" Value="#1E1E1E"/>
+            <Setter Property="Foreground" Value="#AAA"/>
+            <Setter Property="BorderBrush" Value="#333"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Padding" Value="8,4"/>
+            <Setter Property="FontSize" Value="11"/>
+            <Setter Property="Height" Value="28"/>
+            <Setter Property="Width" Value="85"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="border" Background="{TemplateBinding Background}" 
+                                BorderBrush="{TemplateBinding BorderBrush}" 
+                                BorderThickness="{TemplateBinding BorderThickness}" 
+                                CornerRadius="4">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="border" Property="Background" Value="#2A2A2A"/>
+                                <Setter TargetName="border" Property="BorderBrush" Value="#007ACC"/>
+                                <Setter Property="Foreground" Value="White"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="ModernToggle" TargetType="CheckBox">
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="CheckBox">
+                        <BulletDecorator Background="Transparent">
+                            <BulletDecorator.Bullet>
+                                <Border x:Name="Background" Width="36" Height="18" CornerRadius="9" Background="#333" BorderThickness="0">
+                                    <Ellipse x:Name="Dot" Width="14" Height="14" Fill="#777" HorizontalAlignment="Left" Margin="2,0,0,0">
+                                        <Ellipse.RenderTransform>
+                                            <TranslateTransform X="0"/>
+                                        </Ellipse.RenderTransform>
+                                    </Ellipse>
+                                </Border>
+                            </BulletDecorator.Bullet>
+                        </BulletDecorator>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsChecked" Value="True">
+                                <Setter TargetName="Background" Property="Background" Value="#00CC66"/>
+                                <Setter TargetName="Dot" Property="Fill" Value="White"/>
+                                <Trigger.EnterActions>
+                                    <BeginStoryboard>
+                                        <Storyboard>
+                                            <DoubleAnimation Storyboard.TargetName="Dot" Storyboard.TargetProperty="(UIElement.RenderTransform).(TranslateTransform.X)" To="18" Duration="0:0:0.1"/>
+                                        </Storyboard>
+                                    </BeginStoryboard>
+                                </Trigger.EnterActions>
+                                <Trigger.ExitActions>
+                                    <BeginStoryboard>
+                                        <Storyboard>
+                                            <DoubleAnimation Storyboard.TargetName="Dot" Storyboard.TargetProperty="(UIElement.RenderTransform).(TranslateTransform.X)" To="0" Duration="0:0:0.1"/>
+                                        </Storyboard>
+                                    </BeginStoryboard>
+                                </Trigger.ExitActions>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="ProLabel" TargetType="TextBlock">
+            <Setter Property="Foreground" Value="#EEE"/>
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+        </Style>
+    </Page.Resources>
+
+    <Grid Margin="15">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <StackPanel Grid.Row="0" Margin="0,0,0,15">
+            <TextBlock x:Name="StatusText" Text="ENABLED" Foreground="#00CC66" FontSize="14" FontWeight="Bold" HorizontalAlignment="Center"/>
+            <TextBlock Text="Press [Insert] to Toggle" Foreground="#666" FontSize="10" HorizontalAlignment="Center"/>
+        </StackPanel>
+
+        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+            <StackPanel>
+                <!-- FEATURES -->
+                <Border Background="#1A1A1A" CornerRadius="8" Padding="12" Margin="0,0,0,12">
+                    <StackPanel>
+                        <TextBlock Text="MACRO FEATURES" Foreground="#555" FontSize="9" FontWeight="Bold" Margin="0,0,0,10"/>
+                        <Grid Margin="0,0,0,10">
+                            <TextBlock Text="TAP STRAFE" Style="{StaticResource ProLabel}"/>
+                            <CheckBox x:Name="togStrafe" Style="{StaticResource ModernToggle}" HorizontalAlignment="Right" Click="Setting_Changed"/>
+                        </Grid>
+                        <Grid>
+                            <TextBlock Text="JUMP SPAM" Style="{StaticResource ProLabel}"/>
+                            <CheckBox x:Name="togJump" Style="{StaticResource ModernToggle}" HorizontalAlignment="Right" Click="Setting_Changed"/>
+                        </Grid>
+                    </StackPanel>
+                </Border>
+
+                <!-- TECHNIQUE BINDINGS -->
+                <Border Background="#1A1A1A" CornerRadius="8" Padding="12" Margin="0,0,0,12">
+                    <StackPanel>
+                        <TextBlock Text="ELITE TECHNIQUES" Foreground="#555" FontSize="9" FontWeight="Bold" Margin="0,0,0,12"/>
+                        
+                        <Grid Margin="0,0,0,10">
+                            <TextBlock Text="mantle jump" Style="{StaticResource ProLabel}"/>
+                            <Button x:Name="btnDPadUp" Style="{StaticResource ModernBindButton}" HorizontalAlignment="Right" Click="BindButton_Click"/>
+                        </Grid>
+
+                        <Grid Margin="0,0,0,10">
+                            <TextBlock Text="superglide" Style="{StaticResource ProLabel}"/>
+                            <Button x:Name="btnDPadDown" Style="{StaticResource ModernBindButton}" HorizontalAlignment="Right" Click="BindButton_Click"/>
+                        </Grid>
+
+                        <Grid>
+                            <TextBlock Text="fast loot" Style="{StaticResource ProLabel}"/>
+                            <Button x:Name="btnDPadRight" Style="{StaticResource ModernBindButton}" HorizontalAlignment="Right" Click="BindButton_Click"/>
+                        </Grid>
+                    </StackPanel>
+                </Border>
+
+                <!-- MOVEMENT BINDINGS -->
+                <Border Background="#1A1A1A" CornerRadius="8" Padding="12" Margin="0,0,0,12">
+                    <StackPanel>
+                        <TextBlock Text="CORE MOVEMENT" Foreground="#555" FontSize="9" FontWeight="Bold" Margin="0,0,0,10"/>
+                        <Grid Margin="0,0,0,8">
+                            <TextBlock Text="Forward" Foreground="#AAA" VerticalAlignment="Center"/>
+                            <Button x:Name="btnForward" Style="{StaticResource ModernBindButton}" HorizontalAlignment="Right" Click="BindButton_Click"/>
+                        </Grid>
+                        <Grid Margin="0,0,0,8">
+                            <TextBlock Text="Backward" Foreground="#AAA" VerticalAlignment="Center"/>
+                            <Button x:Name="btnBackward" Style="{StaticResource ModernBindButton}" HorizontalAlignment="Right" Click="BindButton_Click"/>
+                        </Grid>
+                        <Grid Margin="0,0,0,8">
+                            <TextBlock Text="Left" Foreground="#AAA" VerticalAlignment="Center"/>
+                            <Button x:Name="btnLeft" Style="{StaticResource ModernBindButton}" HorizontalAlignment="Right" Click="BindButton_Click"/>
+                        </Grid>
+                        <Grid Margin="0,0,0,8">
+                            <TextBlock Text="Right" Foreground="#AAA" VerticalAlignment="Center"/>
+                            <Button x:Name="btnRight" Style="{StaticResource ModernBindButton}" HorizontalAlignment="Right" Click="BindButton_Click"/>
+                        </Grid>
+                        <Grid>
+                            <TextBlock Text="Jump" Foreground="#AAA" VerticalAlignment="Center"/>
+                            <Button x:Name="btnJump" Style="{StaticResource ModernBindButton}" HorizontalAlignment="Right" Click="BindButton_Click"/>
+                        </Grid>
+                    </StackPanel>
+                </Border>
+
+                <!-- SYSTEM -->
+                <Border Background="#1A1A1A" CornerRadius="8" Padding="12">
+                    <StackPanel>
+                        <TextBlock Text="SYSTEM" Foreground="#555" FontSize="9" FontWeight="Bold" Margin="0,0,0,10"/>
+                        <Grid>
+                            <TextBlock Text="Toggle Shortcut" Foreground="#AAA" VerticalAlignment="Center"/>
+                            <Button x:Name="btnToggle" Style="{StaticResource ModernBindButton}" HorizontalAlignment="Right" Click="BindButton_Click"/>
+                        </Grid>
+                    </StackPanel>
+                </Border>
+            </StackPanel>
+        </ScrollViewer>
+
+        <Button Grid.Row="2" Content="SAVE CONFIGURATION" Background="#007ACC" Foreground="White" FontWeight="Bold" Height="36" Margin="0,15,0,0" BorderThickness="0" Click="SaveButton_Click">
+            <Button.Resources>
+                <Style TargetType="Border">
+                    <Setter Property="CornerRadius" Value="6"/>
+                </Style>
+            </Button.Resources>
+        </Button>
+    </Grid>
+</Page>
