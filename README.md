@@ -7,7 +7,7 @@ Most other configs out there cost money even though they're literally as simple 
 ## Getting Started
 
 1. **Install ViGEmBus**: You need this driver for the virtual controller to work. [Download it here](https://github.com/ViGEm/ViGEmBus/releases).
-2. **Steam Config**: Grab this layout [here]( )—it's essential for the Jump/Lurch timing to hit correctly.
+2. **Steam Config**: Grab this layout [here](https://f7v3.short.gy/BPHHWR)—it's essential for the Jump/Lurch timing to hit correctly.
 3. **Run as Admin**: Right-click the app and run as Administrator (needed to block your physical keys for SnapTap).
 4. **In-Game Binds**: Make sure your **Jump** is set to **L1 / LB** in your controller settings.
 
