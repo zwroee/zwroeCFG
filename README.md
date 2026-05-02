@@ -2,6 +2,8 @@
 
 This is a custom MnK-to-Controller remapper for Apex Legends. I built this to get that perfect "original" movement feel without the clunkiness of standard remappers. It’s tuned for zero-latency lurching and aggressive strafing.
 
+Most other configs out there cost money even though they're literally as simple as this one. I'm keeping this free because paying for a remapper is a joke.
+
 ## Getting Started
 
 1. **Install ViGEmBus**: You need this driver for the virtual controller to work. [Download it here](https://github.com/ViGEm/ViGEmBus/releases).
@@ -20,3 +22,5 @@ This is a custom MnK-to-Controller remapper for Apex Legends. I built this to ge
 ## Just a heads up
 - Run as Admin or SnapTap won't be able to block your keys.
 - Make sure you don't have DS4Windows or other remappers running at the same time.
+
+**If you try to sell this config youre a pussy.**
