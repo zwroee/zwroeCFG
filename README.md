@@ -1,24 +1,22 @@
 # zwroe CFG
 
-High-performance MnK-to-Controller remapper for Apex Legends. Focuses on perfect movement feel and zero-latency input.
+This is a custom MnK-to-Controller remapper for Apex Legends. I built this to get that perfect "original" movement feel without the clunkiness of standard remappers. It’s tuned for zero-latency lurching and aggressive strafing.
 
-## Prerequisites
-- **ViGEmBus Driver**: [Download here](https://github.com/ViGEm/ViGEmBus/releases)
-- **Steam Controller Config**: [Apply this layout](https://f7v3.short.gy/BPHHWR) (Required for specialized Jump/Lurch timing)
+## Getting Started
 
-## Setup
-1. Install ViGEmBus.
-2. Apply the Steam Config link above.
-3. Launch Rebind.exe as Administrator.
-4. In-game: Set Jump to L1 / LB (Left Shoulder).
+1. **Install ViGEmBus**: You need this driver for the virtual controller to work. [Download it here](https://github.com/ViGEm/ViGEmBus/releases).
+2. **Steam Config**: Grab this layout [here]( )—it's essential for the Jump/Lurch timing to hit correctly.
+3. **Run as Admin**: Right-click the app and run as Administrator (needed to block your physical keys for SnapTap).
+4. **In-Game Binds**: Make sure your **Jump** is set to **L1 / LB** in your controller settings.
 
-## Features
-- **Tap Strafe**: Sharp 180° lurching. Hold Space + W + A/D.
-- **SnapTap (SOCD)**: Zero-delay A/D switching. Mutes physical keyboard keys.
-- **Hyper Jump**: Frame-perfect auto-bhopping while Space is held.
-- **Fast Loot**: Hold Mouse 4 to vacuum loot (Spams Keyboard E).
-- **Toggle**: Press Insert to enable/disable the engine.
+## What's Inside
 
-## Notes
-- The app must be run as Administrator to block physical A/D keys for SnapTap.
-- Ensure no other remappers (DS4Windows, JoyToKey) are conflicting.
+- **Tap Strafe**: Sharp 180° turns and lurching. Just hold Space + W + A/D.
+- **SnapTap (SOCD)**: Instant A/D switching. The app mutes your physical keys so your movement is always crisp.
+- **Hyper Jump**: Perfect auto-bhopping. Just hold Space and enjoy the momentum.
+- **Fast Loot**: Hold Mouse 4 to vacuum up everything in a deathbox (spams E).
+- **Quick Toggle**: Hit **Insert** to turn everything on or off instantly.
+
+## Just a heads up
+- Run as Admin or SnapTap won't be able to block your keys.
+- Make sure you don't have DS4Windows or other remappers running at the same time.
