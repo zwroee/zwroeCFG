@@ -16,7 +16,7 @@ Most other configs out there cost money even though they're literally as simple 
 - **Tap Strafe**: Sharp 180° turns and lurching. Just hold Space + W + A/D.
 - **SnapTap (SOCD)**: Instant A/D switching. The app mutes your physical keys so your movement is always crisp.
 - **Hyper Jump**: Perfect auto-bhopping. Just hold Space and enjoy the momentum.
-- **Fast Loot**: Hold Mouse 4 to vacuum up everything in a deathbox (spams E).
+- **Fast Loot**: Hold g to vacuum up everything in a deathbox (spams E).
 - **Quick Toggle**: Hit **Insert** to turn everything on or off instantly.
 
 ## Just a heads up
