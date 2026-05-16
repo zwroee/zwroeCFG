@@ -22,7 +22,6 @@ Most other configs out there cost money even though they're simple. I'm keeping 
 
 ## Just a heads up
 
-- The app is compiled as a single standalone executable (`Rebind.exe`). You don't need any DLLs, just the exe and the `mappingConfig.json` file.
 - Run as Admin if you need key blocking.
 - Make sure you don't have DS4Windows or other remappers running at the same time.
 
