@@ -105,7 +105,7 @@
                             <CheckBox x:Name="togStrafe" Style="{StaticResource ModernToggle}" HorizontalAlignment="Right" Click="Setting_Changed"/>
                         </Grid>
                         <Grid>
-                            <TextBlock Text="JUMP SPAM" Style="{StaticResource ProLabel}"/>
+                            <TextBlock Text="AUTO JUMP" Style="{StaticResource ProLabel}"/>
                             <CheckBox x:Name="togJump" Style="{StaticResource ModernToggle}" HorizontalAlignment="Right" Click="Setting_Changed"/>
                         </Grid>
                     </StackPanel>

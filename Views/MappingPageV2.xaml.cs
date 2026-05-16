@@ -4,6 +4,7 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
 using Rebind.Core.Models;
+using Rebind.Helpers;
 using Rebind.Services;
 
 namespace Rebind.Views
@@ -51,7 +52,7 @@ namespace Rebind.Views
             
             btnDPadUp.Content = _config.DPadUp;
             btnDPadDown.Content = _config.DPadDown;
-            btnDPadRight.Content = _config.DPadRight;
+            btnDPadRight.Content = _config.FastLootKey;
             
             togStrafe.IsChecked = _config.IsStrafeEnabled;
             togJump.IsChecked = _config.IsJumpSpamEnabled;
@@ -68,7 +69,7 @@ namespace Rebind.Views
             
             _config.DPadUp = btnDPadUp.Content?.ToString();
             _config.DPadDown = btnDPadDown.Content?.ToString();
-            _config.DPadRight = btnDPadRight.Content?.ToString();
+            _config.FastLootKey = btnDPadRight.Content?.ToString();
             
             _config.IsStrafeEnabled = togStrafe.IsChecked ?? false;
             _config.IsJumpSpamEnabled = togJump.IsChecked ?? false;
@@ -106,10 +107,7 @@ namespace Rebind.Views
             {
                 e.Handled = true;
 
-                string keyStr = e.Key.ToString();
-                if (e.Key >= Key.D0 && e.Key <= Key.D9) keyStr = keyStr.Replace("D", "");
-                if (e.Key >= Key.NumPad0 && e.Key <= Key.NumPad9) keyStr = keyStr.Replace("NumPad", "Numpad ");
-                if (e.Key == Key.Space) keyStr = "Space";
+                string keyStr = KeyHelper.GetConfigKeyName(e.Key);
                 
                 _activeBindButton.Content = keyStr;
                 _activeBindButton.Tag = null;

@@ -17,5 +17,13 @@ namespace Rebind
             
             KeyMapper = new KeyMapperService(configManager, keyboardHook, vigemService);
         }
+
+        protected override void OnExit(ExitEventArgs e)
+        {
+            KeyMapper?.Dispose();
+            KeyMapper = null;
+
+            base.OnExit(e);
+        }
     }
 }
