@@ -3,7 +3,7 @@
 ## [Download link](https://github.com/zwroee/zwroeCFG/releases/tag/1.0)
 This is a custom MnK-to-Controller remapper for Apex Legends. I built this to get that perfect "original" movement feel without the clunkiness of standard remappers. It’s tuned for zero-latency lurching and aggressive strafing.
 
-Most other configs out there cost money even though they're literally as simple as this one. I'm keeping this free because paying for a remapper is a joke.
+Most other configs out there cost money even though they're simple. I'm keeping this free because paying for a remapper is a joke.
 
 ## Getting Started
 
@@ -14,14 +14,16 @@ Most other configs out there cost money even though they're literally as simple 
 
 ## What's Inside
 
-- **Tap Strafe**: Sharp 180° turns and lurching. Just hold Space + W + A/D.
+- **Scan-Code Tap Strafing**: A brand new tap-strafe engine that injects precise `I`, `J`, `K`, `L` keyboard lurches on top of analog controller momentum.
 - **SnapTap (SOCD)**: Instant A/D switching. The app mutes your physical keys so your movement is always crisp.
 - **Hyper Jump**: Perfect auto-bhopping. Just hold Space and enjoy the momentum.
 - **Fast Loot**: Hold g to vacuum up everything in a deathbox (spams E).
 - **Quick Toggle**: Hit **Insert** to turn everything on or off instantly.
 
 ## Just a heads up
-- Run as Admin or SnapTap won't be able to block your keys.
+
+- The app is compiled as a single standalone executable (`Rebind.exe`). You don't need any DLLs, just the exe and the `mappingConfig.json` file.
+- Run as Admin if you need key blocking.
 - Make sure you don't have DS4Windows or other remappers running at the same time.
 
 **If you try to sell this config youre a pussy.**
