@@ -14,16 +14,19 @@ namespace Rebind.Views
         private ConfigManager _configManager;
         private MappingConfig _config;
         private Button? _activeBindButton;
+        private string? _previousBindValue;
 
         public MappingPageV2()
         {
             InitializeComponent();
             
-            _configManager = new ConfigManager();
+            // Reuse single shared instance from App to prevent diverged config state (Fix Bug #2)
+            _configManager = App.ConfigManager ?? new ConfigManager();
             _config = _configManager.LoadConfig();
             LoadConfigToUI();
 
             this.PreviewKeyDown += MappingPageV2_PreviewKeyDown;
+            this.PreviewMouseDown += MappingPageV2_PreviewMouseDown;
 
             if (App.KeyMapper != null)
             {
@@ -53,6 +56,7 @@ namespace Rebind.Views
             btnDPadUp.Content = _config.DPadUp;
             btnDPadDown.Content = _config.DPadDown;
             btnDPadRight.Content = _config.FastLootKey;
+            btnInspect.Content = _config.InspectKey;
             
             togStrafe.IsChecked = _config.IsStrafeEnabled;
             togJump.IsChecked = _config.IsJumpSpamEnabled;
@@ -70,6 +74,7 @@ namespace Rebind.Views
             _config.DPadUp = btnDPadUp.Content?.ToString();
             _config.DPadDown = btnDPadDown.Content?.ToString();
             _config.FastLootKey = btnDPadRight.Content?.ToString();
+            _config.InspectKey = btnInspect.Content?.ToString();
             
             _config.IsStrafeEnabled = togStrafe.IsChecked ?? false;
             _config.IsJumpSpamEnabled = togJump.IsChecked ?? false;
@@ -85,11 +90,12 @@ namespace Rebind.Views
 
         private void BindButton_Click(object sender, RoutedEventArgs e)
         {
-            if (_activeBindButton != null) _activeBindButton.Tag = null;
+            if (_activeBindButton != null) CancelBind();
 
             _activeBindButton = sender as Button;
             if (_activeBindButton != null)
             {
+                _previousBindValue = _activeBindButton.Content?.ToString();
                 _activeBindButton.Tag = "Active";
                 _activeBindButton.Content = "...";
 
@@ -101,23 +107,74 @@ namespace Rebind.Views
             }
         }
 
+        private void CancelBind()
+        {
+            if (_activeBindButton != null)
+            {
+                _activeBindButton.Content = _previousBindValue;
+                _activeBindButton.Tag = null;
+                _activeBindButton = null;
+                _previousBindValue = null;
+            }
+            if (App.KeyMapper != null) App.KeyMapper.IsBindingMode = false;
+        }
+
         private void MappingPageV2_PreviewKeyDown(object sender, KeyEventArgs e)
         {
             if (_activeBindButton != null)
             {
                 e.Handled = true;
 
-                string keyStr = KeyHelper.GetConfigKeyName(e.Key);
-                
-                _activeBindButton.Content = keyStr;
-                _activeBindButton.Tag = null;
-                _activeBindButton = null;
+                Key targetKey = e.Key == Key.System ? e.SystemKey : e.Key;
 
-                // Disable Binding Mode in the engine
-                if (App.KeyMapper != null) App.KeyMapper.IsBindingMode = false;
+                // Escape cancels binding mode (Fix Bug #1)
+                if (targetKey == Key.Escape)
+                {
+                    CancelBind();
+                    return;
+                }
 
-                SaveConfigFromUI();
+                string keyStr = KeyHelper.GetConfigKeyName(targetKey);
+                CommitBind(keyStr);
             }
+        }
+
+        private void MappingPageV2_PreviewMouseDown(object sender, MouseButtonEventArgs e)
+        {
+            if (_activeBindButton != null)
+            {
+                // Check if user clicked on something other than a bind button or current active button to cancel
+                string? mouseStr = e.ChangedButton switch
+                {
+                    MouseButton.Middle   => "Mouse3",
+                    MouseButton.XButton1 => "Mouse4",
+                    MouseButton.XButton2 => "Mouse5",
+                    _ => null
+                };
+
+                if (mouseStr != null)
+                {
+                    e.Handled = true;
+                    CommitBind(mouseStr);
+                }
+                else if (e.OriginalSource is not Button b || b != _activeBindButton)
+                {
+                    // Clicked away with left/right click -> cancel binding mode (Fix Bug #1)
+                    CancelBind();
+                }
+            }
+        }
+
+        private void CommitBind(string keyStr)
+        {
+            _activeBindButton!.Content = keyStr;
+            _activeBindButton.Tag = null;
+            _activeBindButton = null;
+            _previousBindValue = null;
+
+            if (App.KeyMapper != null) App.KeyMapper.IsBindingMode = false;
+
+            SaveConfigFromUI();
         }
 
         private void SaveButton_Click(object sender, RoutedEventArgs e)

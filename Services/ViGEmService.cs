@@ -15,6 +15,9 @@ namespace Rebind.Services
         private ViGEmClient? _client;
         private IXbox360Controller? _controller;
 
+        public bool IsConnected { get; private set; }
+        public string? ErrorMessage { get; private set; }
+
         /// <summary>
         /// Connects to the ViGEmBus driver and initializes a virtual Xbox 360 controller.
         /// </summary>
@@ -26,11 +29,12 @@ namespace Rebind.Services
                 _client = new ViGEmClient();
                 _controller = _client.CreateXbox360Controller();
                 _controller.Connect();
+                IsConnected = true;
             }
             catch (Exception ex)
             {
-                // We will fall back to a "Silent" mode if it fails, 
-                // so the GUI still opens, but we'll log the real error.
+                IsConnected = false;
+                ErrorMessage = ex.Message;
                 Console.WriteLine($"VIGEM ERROR: {ex.Message}");
             }
         }

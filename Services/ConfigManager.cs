@@ -104,7 +104,7 @@ namespace Rebind.Services
             config.ToggleShortcut = DefaultIfBlank(config.ToggleShortcut, "Insert");
             config.DPadUp = DefaultIfBlank(config.DPadUp, "X");
             config.DPadDown = DefaultIfBlank(config.DPadDown, "V");
-            config.Guide = DefaultIfBlank(config.Guide, "G");
+            config.Guide = string.IsNullOrWhiteSpace(config.Guide) ? null : config.Guide.Trim();
             config.LeftBumper = DefaultIfBlank(config.LeftBumper, "Space");
             config.JoystickXPositive = DefaultIfBlank(config.JoystickXPositive, "D");
             config.JoystickXNegative = DefaultIfBlank(config.JoystickXNegative, "A");
@@ -118,6 +118,13 @@ namespace Rebind.Services
             }
 
             config.FastLootKey = DefaultIfBlank(config.FastLootKey, "B");
+            config.InspectKey = DefaultIfBlank(config.InspectKey, "G");
+
+            config.TapStrafeForward  = DefaultIfBlank(config.TapStrafeForward,  "I");
+            config.TapStrafeBackward = DefaultIfBlank(config.TapStrafeBackward, "K");
+            config.TapStrafeLeft     = DefaultIfBlank(config.TapStrafeLeft,     "J");
+            config.TapStrafeRight    = DefaultIfBlank(config.TapStrafeRight,    "L");
+            config.TapStrafeJump     = DefaultIfBlank(config.TapStrafeJump,     "Y");
 
             if (KeysMatch(config.DPadLeft, config.FastLootKey))
                 config.DPadLeft = null;

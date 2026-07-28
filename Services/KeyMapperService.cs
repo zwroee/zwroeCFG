@@ -16,6 +16,7 @@ namespace Rebind.Services
         
         public static void Log(string message)
         {
+#if DEBUG
             try 
             { 
                 lock (_lock) 
@@ -24,6 +25,7 @@ namespace Rebind.Services
                 } 
             } 
             catch { }
+#endif
         }
     }
 
@@ -47,16 +49,18 @@ namespace Rebind.Services
         private const byte VK_E = 0x45;
         private const byte SCAN_E = 0x12;
         private const byte SCAN_SPACE = 0x39;
+        private const byte VK_N = 0x4E;
+        private const byte SCAN_N = 0x31; // Inspect key
 
-        // In-game movement keybind scan codes
-        // Forward=I, Backward=K, Left=J, Right=L, Jump=Y
-        private const byte SCAN_I = 0x17; // In-game Forward
-        private const byte SCAN_K = 0x25; // In-game Backward
-        private const byte SCAN_J = 0x24; // In-game Left
-        private const byte SCAN_L = 0x26; // In-game Right
-        private const byte SCAN_Y = 0x15; // In-game Jump
+        // In-game movement keybind scan codes (dynamic, resolved from config)
+        private byte _scanForward = 0x17;  // Default I
+        private byte _scanBackward = 0x25; // Default K
+        private byte _scanLeft = 0x24;     // Default J
+        private byte _scanRight = 0x26;    // Default L
+        private byte _scanJump = 0x15;     // Default Y
 
         private readonly KeyboardHook _keyboardHook;
+        private readonly MouseHook _mouseHook;
         private readonly ViGEmService _vigemService;
         private readonly ConfigManager _configManager;
 
@@ -67,6 +71,11 @@ namespace Rebind.Services
         /// Indicates if the remapper engine is currently active.
         /// </summary>
         public bool IsEnabled => _isEnabled;
+
+        /// <summary>
+        /// Indicates if ViGEmBus controller is connected.
+        /// </summary>
+        public bool IsViGEmConnected => _vigemService.IsConnected;
 
         /// <summary>
         /// Set to true by the UI to pause input blocking, allowing the user to bind new keys.
@@ -80,8 +89,8 @@ namespace Rebind.Services
         private int _moveRightVk;
         private int _backVk;
 
-        private HashSet<int> _blockedKeys = new HashSet<int>();
         private Dictionary<int, Action<bool>> _keyPressActions;
+        private readonly object _mappingLock = new object();
 
         private readonly Thread _macroThread;
         private bool _isRunning = true;
@@ -96,6 +105,8 @@ namespace Rebind.Services
         private bool _jumpState = false;
         private bool _lootState = false;
         private bool _isLootKeyPressed = false;
+        private bool _inspectState = false;
+        private bool _isInspectKeyPressed = false;
 
         private readonly object _stackLock = new object();
         private List<int> _horizontalStack = new List<int>();
@@ -113,10 +124,11 @@ namespace Rebind.Services
         /// <summary>
         /// Initializes the KeyMapperService and starts the high-precision background macro loop.
         /// </summary>
-        public KeyMapperService(ConfigManager configManager, KeyboardHook keyboardHook, ViGEmService vigemService)
+        public KeyMapperService(ConfigManager configManager, KeyboardHook keyboardHook, MouseHook mouseHook, ViGEmService vigemService)
         {
             _configManager = configManager;
             _keyboardHook = keyboardHook;
+            _mouseHook = mouseHook;
             _vigemService = vigemService;
             _keyPressActions = new Dictionary<int, Action<bool>>();
 
@@ -128,6 +140,7 @@ namespace Rebind.Services
             ReloadConfig();
 
             _keyboardHook.KeyEvent += HandleKeyEvent;
+            _mouseHook.KeyEvent += HandleKeyEvent;
         }
 
         /// <summary>
@@ -146,15 +159,17 @@ namespace Rebind.Services
             _moveRightVk = KeyHelper.GetVirtualKeyCode(_config.JoystickXPositive ?? "D");
             _backVk = KeyHelper.GetVirtualKeyCode(_config.JoystickYNegative ?? "S");
 
-            _blockedKeys.Clear();
-            _blockedKeys.Add(_toggleKeyVk);
-            _blockedKeys.Add(_strafeKeyVk);
-            _blockedKeys.Add(_jumpKeyVk);
-            _blockedKeys.Add(_moveLeftVk);
-            _blockedKeys.Add(_moveRightVk);
-            _blockedKeys.Add(_backVk);
+            // Resolve dynamic scan codes for tap strafe output keys
+            _scanForward  = KeyHelper.GetScanCode(_config.TapStrafeForward  ?? "I", 0x17);
+            _scanBackward = KeyHelper.GetScanCode(_config.TapStrafeBackward ?? "K", 0x25);
+            _scanLeft     = KeyHelper.GetScanCode(_config.TapStrafeLeft     ?? "J", 0x24);
+            _scanRight    = KeyHelper.GetScanCode(_config.TapStrafeRight    ?? "L", 0x26);
+            _scanJump     = KeyHelper.GetScanCode(_config.TapStrafeJump     ?? "Y", 0x15);
 
-            BuildMappingCache();
+            lock (_mappingLock)
+            {
+                BuildMappingCache();
+            }
         }
 
         private void BuildMappingCache()
@@ -168,6 +183,7 @@ namespace Rebind.Services
             AddMapping(_config.DPadRight, isDown => _vigemService.SetButton(Xbox360Button.Right, isDown));
             AddMapping(_config.Guide, isDown => _vigemService.SetButton(Xbox360Button.Guide, isDown));
             AddMapping(_config.FastLootKey, isDown => _isLootKeyPressed = isDown);
+            AddMapping(_config.InspectKey, isDown => _isInspectKeyPressed = isDown);
         }
 
         private void AddMapping(string? keyString, Action<bool> action)
@@ -178,8 +194,6 @@ namespace Rebind.Services
             {
                 if (_keyPressActions.ContainsKey(vkCode)) _keyPressActions[vkCode] += action;
                 else _keyPressActions[vkCode] = action;
-
-                _blockedKeys.Add(vkCode);
             }
         }
 
@@ -222,13 +236,24 @@ namespace Rebind.Services
                     { 
                         _jumpState = false; 
                         _vigemService.SetButton(Xbox360Button.LeftShoulder, false); 
-                        SendScanCode(SCAN_SPACE, false); 
+                        if (!IsMacroActive())
+                        {
+                            SendScanCode(SCAN_SPACE, false); 
+                        }
                     }
                 }
                 else
                 {
-                    _vigemService.SetButton(Xbox360Button.LeftShoulder, isDown);
-                    SendScanCode(SCAN_SPACE, isDown);
+                    if (isDown)
+                    {
+                        _vigemService.SetButton(Xbox360Button.LeftShoulder, true);
+                        SendScanCode(SCAN_SPACE, true);
+                    }
+                    else
+                    {
+                        _vigemService.SetButton(Xbox360Button.LeftShoulder, false);
+                        SendScanCode(SCAN_SPACE, false);
+                    }
                 }
 
                 UpdateMovementOutput();
@@ -253,7 +278,13 @@ namespace Rebind.Services
                 return true; // Block physical S
             }
 
-            if (_keyPressActions.TryGetValue(vkCode, out var action))
+            Action<bool>? action = null;
+            lock (_mappingLock)
+            {
+                _keyPressActions.TryGetValue(vkCode, out action);
+            }
+
+            if (action != null)
             {
                 action.Invoke(isDown);
                 return true; // Block other mapped keys
@@ -329,12 +360,15 @@ namespace Rebind.Services
             _vigemService.SetAxis(Xbox360Axis.LeftThumbY, _currentJoyY);
         }
 
-        private void SendScanCode(byte scanCode, bool isDown)
+        private void SendScanCode(byte scanCode, bool isDown, bool force = false)
         {
-            if (!_scanCodeStates.ContainsKey(scanCode)) _scanCodeStates[scanCode] = false;
-            
-            // Skip redundant hardware calls
-            if (_scanCodeStates[scanCode] == isDown) return;
+            if (!force)
+            {
+                if (!_scanCodeStates.ContainsKey(scanCode)) _scanCodeStates[scanCode] = false;
+                
+                // Skip redundant hardware calls
+                if (_scanCodeStates[scanCode] == isDown) return;
+            }
             
             _scanCodeStates[scanCode] = isDown;
             KeyLogger.Log($"VIRTUAL KEYBOARD: {(isDown ? "DOWN" : "UP")} - SCAN: 0x{scanCode:X2}");
@@ -358,11 +392,11 @@ namespace Rebind.Services
             _currentJoyY = 0;
 
             // Release all virtual in-game keys
-            SendScanCode(SCAN_I, false);
-            SendScanCode(SCAN_K, false);
-            SendScanCode(SCAN_J, false);
-            SendScanCode(SCAN_L, false);
-            SendScanCode(SCAN_Y, false);
+            SendScanCode(_scanForward, false);
+            SendScanCode(_scanBackward, false);
+            SendScanCode(_scanLeft, false);
+            SendScanCode(_scanRight, false);
+            SendScanCode(_scanJump, false);
             SendScanCode(SCAN_SPACE, false);
 
             _vigemService.SetAxis(Xbox360Axis.LeftThumbX, 0);
@@ -373,7 +407,10 @@ namespace Rebind.Services
             _vigemService.SetButton(Xbox360Button.Left, false);
             _vigemService.SetButton(Xbox360Button.Right, false);
             _vigemService.SetButton(Xbox360Button.Guide, false);
-            keybd_event(VK_E, SCAN_E, KEYEVENTF_KEYUP, 0);
+            keybd_event(VK_E, SCAN_E, KEYEVENTF_KEYUP, KeyboardHook.SYNTHETIC_MARKER);
+            keybd_event(VK_N, SCAN_N, KEYEVENTF_KEYUP, KeyboardHook.SYNTHETIC_MARKER);
+            _inspectState = false;
+            _isInspectKeyPressed = false;
         }
 
         /// <summary>
@@ -390,11 +427,11 @@ namespace Rebind.Services
 
                     // ── Tap Strafe Engine ──────────────────────────────────────────
                     // Rules (Space must be held):
-                    //   Space + W  → spam Y + I
-                    //   Space + S  → spam Y + K
-                    //   Space + A  → spam Y + J
-                    //   Space + D  → spam Y + L
-                    // Pulse: 9ms ON (3 ticks) / 3ms OFF (1 tick) = 75% duty cycle
+                    //   Space + W  → spam _scanJump + _scanForward
+                    //   Space + S  → spam _scanJump + _scanBackward
+                    //   Space + A  → spam _scanJump + _scanLeft
+                    //   Space + D  → spam _scanJump + _scanRight
+                    // Pulse: 12ms ON (4 ticks) / 3ms OFF (1 tick) = 80% duty cycle
                     if (IsMacroActive())
                     {
                         _wasTapStrafeActive = true;
@@ -413,29 +450,32 @@ namespace Rebind.Services
                         if (_macroCounter % 100 == 0)
                             KeyLogger.Log($"STRAFE STATE: W={holdW} S={holdS} A={holdA} D={holdD} | vStack={_verticalStack.Count} hStack={_horizontalStack.Count}");
 
-                        // The virtual joystick remains ACTIVE based on normal movement input.
-                        // We do NOT zero it out. The smooth base momentum comes from the controller,
-                        // and the sharp directional lurches come from the spammed keyboard scan codes on top.
-
-                        // Replicating the EXACT duty cycle from your old code:
-                        // 12ms ON (4 ticks) / 3ms OFF (1 tick)
                         bool tapOn = (_macroCounter % 5 != 0);
 
                         if (tapOn)
                         {
-                            SendScanCode(SCAN_Y, true);
-                            SendScanCode(SCAN_I, holdW);
-                            SendScanCode(SCAN_K, holdS);
-                            SendScanCode(SCAN_J, holdA);
-                            SendScanCode(SCAN_L, holdD);
+                            // Only pulse jump key if auto jump-spam (bhop) is enabled.
+                            if (_config.IsJumpSpamEnabled)
+                                SendScanCode(_scanJump, true);
+
+                            // Prioritize forward lurch (_scanForward) when W is held.
+                            bool sendI = holdW;
+                            bool sendK = holdS && !holdW;
+                            bool sendJ = holdA && !holdW && !holdS;
+                            bool sendL = holdD && !holdW && !holdS;
+
+                            SendScanCode(_scanForward, sendI);
+                            SendScanCode(_scanBackward, sendK);
+                            SendScanCode(_scanLeft, sendJ);
+                            SendScanCode(_scanRight, sendL);
                         }
                         else
                         {
-                            SendScanCode(SCAN_Y, false);
-                            SendScanCode(SCAN_I, false);
-                            SendScanCode(SCAN_K, false);
-                            SendScanCode(SCAN_J, false);
-                            SendScanCode(SCAN_L, false);
+                            SendScanCode(_scanJump, false);
+                            SendScanCode(_scanForward, false);
+                            SendScanCode(_scanBackward, false);
+                            SendScanCode(_scanLeft, false);
+                            SendScanCode(_scanRight, false);
                         }
                     }
                     else
@@ -444,11 +484,11 @@ namespace Rebind.Services
                         if (_wasTapStrafeActive)
                         {
                             _wasTapStrafeActive = false;
-                            SendScanCode(SCAN_Y, false);
-                            SendScanCode(SCAN_I, false);
-                            SendScanCode(SCAN_K, false);
-                            SendScanCode(SCAN_J, false);
-                            SendScanCode(SCAN_L, false);
+                            SendScanCode(_scanJump, false);
+                            SendScanCode(_scanForward, false);
+                            SendScanCode(_scanBackward, false);
+                            SendScanCode(_scanLeft, false);
+                            SendScanCode(_scanRight, false);
                         }
 
                         if (_macroCounter % 5 == 0)
@@ -470,13 +510,27 @@ namespace Rebind.Services
                         if (_isLootKeyPressed)
                         {
                             _lootState = !_lootState;
-                            if (_lootState) keybd_event(VK_E, SCAN_E, 0, 0);
-                            else keybd_event(VK_E, SCAN_E, KEYEVENTF_KEYUP, 0);
+                            if (_lootState) keybd_event(VK_E, SCAN_E, 0, KeyboardHook.SYNTHETIC_MARKER);
+                            else keybd_event(VK_E, SCAN_E, KEYEVENTF_KEYUP, KeyboardHook.SYNTHETIC_MARKER);
                         }
                         else if (_lootState)
                         {
                             _lootState = false;
-                            keybd_event(VK_E, SCAN_E, KEYEVENTF_KEYUP, 0);
+                            keybd_event(VK_E, SCAN_E, KEYEVENTF_KEYUP, KeyboardHook.SYNTHETIC_MARKER);
+                        }
+
+                        // INSPECT SPAM (Keyboard N)
+                        // Same 30ms cycle as fast loot
+                        if (_isInspectKeyPressed)
+                        {
+                            _inspectState = !_inspectState;
+                            if (_inspectState) keybd_event(VK_N, SCAN_N, 0, KeyboardHook.SYNTHETIC_MARKER);
+                            else keybd_event(VK_N, SCAN_N, KEYEVENTF_KEYUP, KeyboardHook.SYNTHETIC_MARKER);
+                        }
+                        else if (_inspectState)
+                        {
+                            _inspectState = false;
+                            keybd_event(VK_N, SCAN_N, KEYEVENTF_KEYUP, KeyboardHook.SYNTHETIC_MARKER);
                         }
                     }
                 }
@@ -488,11 +542,13 @@ namespace Rebind.Services
         public void Dispose()
         {
             _keyboardHook.KeyEvent -= HandleKeyEvent;
+            _mouseHook.KeyEvent -= HandleKeyEvent;
             ClearVirtualInputs();
             _isRunning = false;
             timeEndPeriod(1);
             _macroThread.Join(500);
             _keyboardHook.Dispose();
+            _mouseHook.Dispose();
             _vigemService.Dispose();
         }
     }

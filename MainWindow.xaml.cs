@@ -15,10 +15,22 @@ namespace Rebind
             
             MainFrame.Navigate(new MappingPageV2());
 
+            // Check ViGEm driver status and display warning if missing (Fix Bug #6)
+            CheckViGEmStatus();
+
             // Subscribe to toggle events from the engine
             if (App.KeyMapper != null)
             {
                 App.KeyMapper.OnToggleChanged += UpdateStatusUI;
+            }
+        }
+
+        private void CheckViGEmStatus()
+        {
+            if (App.KeyMapper != null && !App.KeyMapper.IsViGEmConnected)
+            {
+                ViGEmWarningText.Visibility = Visibility.Visible;
+                ViGEmWarningText.ToolTip = "ViGEmBus driver is not installed or failed to initialize. Controller inputs won't work until installed.";
             }
         }
 
