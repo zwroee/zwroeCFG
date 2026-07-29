@@ -6,7 +6,8 @@ A simple MnK-to-Controller movement remapper for Apex Legends.
 
 [**Download Release**](https://github.com/zwroee/zwroeCFG/releases/tag/1.0) • [**Discord**](https://discord.gg/DgJuRp2tj5) • [**Ko-fi**](https://ko-fi.com/zwroe)
 
----
+<img width="837" height="438" alt="6f5ac5d50a5729cebd1fc6f896fa912b" src="https://github.com/user-attachments/assets/a281e6f6-ff87-450a-bb1b-65354513e3d5" />
+
 
 ## Features
 
