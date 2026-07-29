@@ -1,6 +1,6 @@
 # zwroe CFG
 
-A simple MnK-to-Controller movement remapper for Apex Legends. 
+A MnK-to-Controller movement remapper for Apex Legends. 
 
 100% free. Paying for remappers is dumb.
 
