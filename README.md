@@ -1,8 +1,9 @@
 # zwroe CFG
 # discord server https://discord.gg/DgJuRp2tj5
 ## [Download link](https://github.com/zwroee/zwroeCFG/releases/tag/1.0)
-This is a custom MnK-to-Controller remapper for Apex Legends. I built this to get that perfect "original" movement feel without the clunkiness of standard remappers. It’s tuned for zero-latency lurching and aggressive strafing.
 <img width="851" height="315" alt="0f12ddf51b7d3b57d06a993883f3c3b9" src="https://github.com/user-attachments/assets/5bd20935-0d49-4596-bec0-e34cfef6b246" />
+
+This is a custom MnK-to-Controller remapper for Apex Legends. I built this to get that perfect "original" movement feel without the clunkiness of standard remappers. It’s tuned for zero-latency lurching and aggressive strafing.
 
 Most other configs out there cost money even though they're simple. I'm keeping this free because paying for a remapper is a joke.
 
