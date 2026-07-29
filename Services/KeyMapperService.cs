@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Threading;
 using Rebind.Core.Models;
@@ -11,21 +12,25 @@ namespace Rebind.Services
 {
     public static class KeyLogger
     {
-        private static string _logPath = Path.Combine(AppContext.BaseDirectory, "key_log.txt");
-        private static object _lock = new object();
+        private static readonly string LogDirectory = Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+            "Rebind", "logs");
+        private static readonly string LogFilePath = Path.Combine(LogDirectory, "movement_debug.log");
+        private static readonly object LogLock = new object();
         
+        public static string LogPath => LogFilePath;
+
         public static void Log(string message)
         {
-#if DEBUG
             try 
             { 
-                lock (_lock) 
+                lock (LogLock) 
                 { 
-                    File.AppendAllText(_logPath, $"[{DateTime.Now:HH:mm:ss.fff}] {message}\n"); 
+                    if (!Directory.Exists(LogDirectory)) Directory.CreateDirectory(LogDirectory);
+                    File.AppendAllText(LogFilePath, $"[{DateTime.Now:HH:mm:ss.fff}] {message}\n"); 
                 } 
             } 
             catch { }
-#endif
         }
     }
 
@@ -58,6 +63,12 @@ namespace Rebind.Services
         private byte _scanLeft = 0x24;     // Default J
         private byte _scanRight = 0x26;    // Default L
         private byte _scanJump = 0x15;     // Default Y
+
+        // Primary WASD scan codes - used to synthesize keyboard events after tap-strafe
+        private byte _scanCodeW = 0x11;    // W
+        private byte _scanCodeS = 0x1F;    // S
+        private byte _scanCodeA = 0x1E;    // A
+        private byte _scanCodeD = 0x20;    // D
 
         private readonly KeyboardHook _keyboardHook;
         private readonly MouseHook _mouseHook;
@@ -102,6 +113,8 @@ namespace Rebind.Services
         private short _currentJoyY = 0;
 
         private int _macroCounter = 0;
+        private int _tapStrafeCounter = 0;
+        private readonly Stopwatch _loopTimer = Stopwatch.StartNew();
         private bool _jumpState = false;
         private bool _lootState = false;
         private bool _isLootKeyPressed = false;
@@ -113,6 +126,9 @@ namespace Rebind.Services
         private List<int> _verticalStack = new List<int>();
 
         private bool _wasTapStrafeActive = false;
+        // VK codes of physical WASD keys that have a synthetic KEYDOWN currently active in Apex.
+        // When the physical key is released, we send the matching synthetic KEYUP so the key never sticks.
+        private readonly HashSet<int> _syntheticActiveVks = new HashSet<int>();
 
         private short _lastLoggedJoyX = 0;
         private short _lastLoggedJoyY = 0;
@@ -165,6 +181,12 @@ namespace Rebind.Services
             _scanLeft     = KeyHelper.GetScanCode(_config.TapStrafeLeft     ?? "J", 0x24);
             _scanRight    = KeyHelper.GetScanCode(_config.TapStrafeRight    ?? "L", 0x26);
             _scanJump     = KeyHelper.GetScanCode(_config.TapStrafeJump     ?? "Y", 0x15);
+
+            // Resolve WASD scan codes for post-tap-strafe synthetic keyboard events
+            _scanCodeW = KeyHelper.GetScanCode(_config.JoystickYPositive ?? "W", 0x11);
+            _scanCodeS = KeyHelper.GetScanCode(_config.JoystickYNegative ?? "S", 0x1F);
+            _scanCodeA = KeyHelper.GetScanCode(_config.JoystickXNegative ?? "A", 0x1E);
+            _scanCodeD = KeyHelper.GetScanCode(_config.JoystickXPositive ?? "D", 0x20);
 
             lock (_mappingLock)
             {
@@ -222,7 +244,15 @@ namespace Rebind.Services
             {
                 KeyLogger.Log($"PHYSICAL: {(isDown ? "DOWN" : "UP")} - VK: {vkCode}");
                 UpdateSnapTap(vkCode, isDown);
-                return true; // Block physical A/D
+                // On KEYUP, also release any synthetic KEYDOWN we issued for this key after tap-strafe
+                if (!isDown && _syntheticActiveVks.Contains(vkCode))
+                {
+                    _syntheticActiveVks.Remove(vkCode);
+                    byte sc = (vkCode == _moveLeftVk) ? _scanCodeA : _scanCodeD;
+                    keybd_event(0, sc, KEYEVENTF_SCANCODE | (uint)KEYEVENTF_KEYUP, KeyboardHook.SYNTHETIC_MARKER);
+                    KeyLogger.Log($"SYNTHETIC KEYUP: VK={vkCode} Scan=0x{sc:X2}");
+                }
+                return true; // Always block physical A/D
             }
 
             // Jump (Space)
@@ -266,7 +296,13 @@ namespace Rebind.Services
                 KeyLogger.Log($"PHYSICAL: {(isDown ? "DOWN" : "UP")} - VK: {vkCode}");
                 _isStrafeKeyPressed = isDown;
                 UpdateSnapTap(vkCode, isDown);
-                return true; // Block physical W
+                if (!isDown && _syntheticActiveVks.Contains(vkCode))
+                {
+                    _syntheticActiveVks.Remove(vkCode);
+                    keybd_event(0, _scanCodeW, KEYEVENTF_SCANCODE | (uint)KEYEVENTF_KEYUP, KeyboardHook.SYNTHETIC_MARKER);
+                    KeyLogger.Log($"SYNTHETIC KEYUP: W VK={vkCode}");
+                }
+                return true; // Always block physical W
             }
 
             // Backward (S)
@@ -275,7 +311,13 @@ namespace Rebind.Services
                 KeyLogger.Log($"PHYSICAL: {(isDown ? "DOWN" : "UP")} - VK: {vkCode}");
                 _isBackKeyPressed = isDown;
                 UpdateSnapTap(vkCode, isDown);
-                return true; // Block physical S
+                if (!isDown && _syntheticActiveVks.Contains(vkCode))
+                {
+                    _syntheticActiveVks.Remove(vkCode);
+                    keybd_event(0, _scanCodeS, KEYEVENTF_SCANCODE | (uint)KEYEVENTF_KEYUP, KeyboardHook.SYNTHETIC_MARKER);
+                    KeyLogger.Log($"SYNTHETIC KEYUP: S VK={vkCode}");
+                }
+                return true; // Always block physical S
             }
 
             Action<bool>? action = null;
@@ -313,6 +355,7 @@ namespace Rebind.Services
                 }
             }
 
+            KeyLogger.Log($"SNAP TAP STACK: hStack=[{string.Join(",", _horizontalStack)}] vStack=[{string.Join(",", _verticalStack)}]");
             UpdateMovementOutput();
         }
 
@@ -323,7 +366,7 @@ namespace Rebind.Services
                 && (_isStrafeKeyPressed || _isBackKeyPressed || _horizontalStack.Count > 0);
         }
 
-        private void UpdateMovementOutput()
+        private void UpdateMovementOutput(bool forceRefresh = false)
         {
             bool ew = false, es = false, ea = false, ed = false;
 
@@ -344,18 +387,25 @@ namespace Rebind.Services
                 }
             }
 
-            _currentJoyY = (short)(ew ? 32767 : (es ? -32768 : 0));
-            _currentJoyX = (short)(ed ? 32767 : (ea ? -32768 : 0));
+            short rawY = (short)(ew ? 32767 : (es ? -32768 : 0));
+            short rawX = (short)(ed ? 32767 : (ea ? -32768 : 0));
 
-            if (_currentJoyX != _lastLoggedJoyX || _currentJoyY != _lastLoggedJoyY)
+            // Micro-dither active non-zero axes by 1 unit on alternating macro ticks.
+            // In hybrid input games like Apex Legends, static controller axes are put to sleep
+            // when KBM events occur (mouse click, crouch, tap-strafe). Micro-dithering keeps
+            // the XInput driver report stream active so movement NEVER stops or freezes.
+            short dither = (short)((_macroCounter % 2 == 0) ? 0 : 1);
+            _currentJoyY = rawY == 0 ? (short)0 : (short)(rawY > 0 ? rawY - dither : rawY + dither);
+            _currentJoyX = rawX == 0 ? (short)0 : (short)(rawX > 0 ? rawX - dither : rawX + dither);
+
+            if (forceRefresh || rawX != _lastLoggedJoyX || rawY != _lastLoggedJoyY)
             {
-                _lastLoggedJoyX = _currentJoyX;
-                _lastLoggedJoyY = _currentJoyY;
-                KeyLogger.Log($"VIRTUAL JOYSTICK: X={_currentJoyX}, Y={_currentJoyY}");
+                _lastLoggedJoyX = rawX;
+                _lastLoggedJoyY = rawY;
+                KeyLogger.Log($"VIRTUAL INPUTS: JoyX={_currentJoyX} (raw={rawX}), JoyY={_currentJoyY} (raw={rawY}) | WASD=[W:{ew}, A:{ea}, S:{es}, D:{ed}] (forceRefresh={forceRefresh})");
             }
 
-            // EXCLUSIVELY use Virtual Joystick for continuous movement!
-            // This prevents "sticky keys" and "sliding" by eliminating overlapping keyboard inputs.
+            // Update Virtual Xbox Controller Left Thumbstick with micro-dithered axis values
             _vigemService.SetAxis(Xbox360Axis.LeftThumbX, _currentJoyX);
             _vigemService.SetAxis(Xbox360Axis.LeftThumbY, _currentJoyY);
         }
@@ -387,6 +437,7 @@ namespace Rebind.Services
             _lootState = false;
             _horizontalStack.Clear();
             _verticalStack.Clear();
+            _syntheticActiveVks.Clear();
 
             _currentJoyX = 0;
             _currentJoyY = 0;
@@ -425,16 +476,71 @@ namespace Rebind.Services
                 {
                     _macroCounter++;
 
+                    // CONTINUOUS MOVEMENT RE-ASSERTION (Every 5 ticks = 15ms)
+                    // Whenever movement keys are held in stack, continuously refresh the controller stick
+                    // with micro-dithering so mouse clicks, crouch, and tap-strafe scan-codes never freeze movement.
+                    bool hasMovementKeys;
+                    lock (_stackLock)
+                    {
+                        hasMovementKeys = _horizontalStack.Count > 0 || _verticalStack.Count > 0;
+                    }
+
+                    if (_macroCounter % 5 == 0 && hasMovementKeys)
+                    {
+                        UpdateMovementOutput();
+
+                        // Continuously re-assert synthetic keyboard holds so they never drop
+                        // even if a conflicting lurch key release triggers a `-forward` cancellation.
+                        lock (_stackLock)
+                        {
+                            foreach (int vk in _syntheticActiveVks)
+                            {
+                                byte sc;
+                                if (vk == _moveLeftVk) sc = _scanCodeA;
+                                else if (vk == _moveRightVk) sc = _scanCodeD;
+                                else if (vk == _strafeKeyVk) sc = _scanCodeW;
+                                else sc = _scanCodeS;
+                                
+                                keybd_event(0, sc, KEYEVENTF_SCANCODE, KeyboardHook.SYNTHETIC_MARKER);
+                            }
+                        }
+                    }
+
                     // ── Tap Strafe Engine ──────────────────────────────────────────
                     // Rules (Space must be held):
                     //   Space + W  → spam _scanJump + _scanForward
                     //   Space + S  → spam _scanJump + _scanBackward
                     //   Space + A  → spam _scanJump + _scanLeft
                     //   Space + D  → spam _scanJump + _scanRight
-                    // Pulse: 12ms ON (4 ticks) / 3ms OFF (1 tick) = 80% duty cycle
                     if (IsMacroActive())
                     {
-                        _wasTapStrafeActive = true;
+                        if (!_wasTapStrafeActive)
+                        {
+                            // We just started tap-strafing. Reset the local counter so we immediately 
+                            // send an ON pulse, eliminating any startup delay.
+                            _tapStrafeCounter = 0;
+
+                            // Release any synthetic WASD keys we had active before tap-strafe starts,
+                            // so there's no conflict between synthetic hold and lurch key pulses
+                            if (_syntheticActiveVks.Count > 0)
+                            {
+                                foreach (int vk in _syntheticActiveVks)
+                                {
+                                    byte sc;
+                                    if (vk == _moveLeftVk) sc = _scanCodeA;
+                                    else if (vk == _moveRightVk) sc = _scanCodeD;
+                                    else if (vk == _strafeKeyVk) sc = _scanCodeW;
+                                    else sc = _scanCodeS;
+                                    keybd_event(0, sc, KEYEVENTF_SCANCODE | (uint)KEYEVENTF_KEYUP, KeyboardHook.SYNTHETIC_MARKER);
+                                }
+                                _syntheticActiveVks.Clear();
+                                KeyLogger.Log("TAP STRAFE START: Released synthetic WASD holds");
+                            }
+                            
+                            _wasTapStrafeActive = true;
+                        }
+
+                        _tapStrafeCounter++;
 
                         // Thread-safe stack snapshot
                         bool holdW, holdS, holdA, holdD;
@@ -450,7 +556,11 @@ namespace Rebind.Services
                         if (_macroCounter % 100 == 0)
                             KeyLogger.Log($"STRAFE STATE: W={holdW} S={holdS} A={holdA} D={holdD} | vStack={_verticalStack.Count} hStack={_horizontalStack.Count}");
 
-                        bool tapOn = (_macroCounter % 5 != 0);
+                        // Pulse: 9ms ON (3 ticks) / 6ms OFF (2 ticks) = 67Hz jump rate.
+                        // Faster than 33Hz significantly reduces snagging on geometry since
+                        // there are fewer frames between jumps. The 6ms OFF is still long
+                        // enough for the Source engine to register the key release cleanly.
+                        bool tapOn = (_tapStrafeCounter % 5 < 3);
 
                         if (tapOn)
                         {
@@ -484,11 +594,51 @@ namespace Rebind.Services
                         if (_wasTapStrafeActive)
                         {
                             _wasTapStrafeActive = false;
-                            SendScanCode(_scanJump, false);
-                            SendScanCode(_scanForward, false);
-                            SendScanCode(_scanBackward, false);
-                            SendScanCode(_scanLeft, false);
-                            SendScanCode(_scanRight, false);
+                            SendScanCode(_scanJump, false, force: true);
+                            SendScanCode(_scanForward, false, force: true);
+                            SendScanCode(_scanBackward, false, force: true);
+                            SendScanCode(_scanLeft, false, force: true);
+                            SendScanCode(_scanRight, false, force: true);
+
+                            // Drop controller stick to 0 briefly to force a massive delta.
+                            // When UpdateMovementOutput snaps it back to max a few milliseconds later,
+                            // Apex instantly wakes up from Keyboard Mode and resumes Controller movement.
+                            _vigemService.SetAxis(Xbox360Axis.LeftThumbX, 0);
+                            _vigemService.SetAxis(Xbox360Axis.LeftThumbY, 0);
+
+                            // Sleep for 10ms (approx 1-2 game frames) to guarantee that the KEYUP events for the 
+                            // lurch keys (I, J, K, L) are processed by the Source engine before our synthetic WASD keys go DOWN.
+                            // Otherwise, the engine may process `-forward` (from I UP) AFTER `+forward` (from W DOWN) in the same tick,
+                            // which erroneously cancels the forward movement.
+                            Thread.Sleep(10);
+                            
+                            // Re-assert controller stick
+                            UpdateMovementOutput(forceRefresh: true);
+
+                            // Synthesize KEYDOWN for each currently held WASD key so Apex's keyboard
+                            // input mode sees the direction as active and doesn't drop movement velocity.
+                            // The matching KEYUP is sent when the physical key is actually released.
+                            lock (_stackLock)
+                            {
+                                if (_horizontalStack.Count > 0)
+                                {
+                                    int vk = _horizontalStack[_horizontalStack.Count - 1];
+                                    byte sc = (vk == _moveLeftVk) ? _scanCodeA : _scanCodeD;
+                                    keybd_event(0, sc, KEYEVENTF_SCANCODE, KeyboardHook.SYNTHETIC_MARKER);
+                                    _syntheticActiveVks.Add(vk);
+                                    KeyLogger.Log($"POST-STRAFE KEYDOWN: VK={vk} Scan=0x{sc:X2}");
+                                }
+                                if (_verticalStack.Count > 0)
+                                {
+                                    int vk = _verticalStack[_verticalStack.Count - 1];
+                                    byte sc = (vk == _strafeKeyVk) ? _scanCodeW : _scanCodeS;
+                                    keybd_event(0, sc, KEYEVENTF_SCANCODE, KeyboardHook.SYNTHETIC_MARKER);
+                                    _syntheticActiveVks.Add(vk);
+                                    KeyLogger.Log($"POST-STRAFE KEYDOWN: VK={vk} Scan=0x{sc:X2}");
+                                }
+                            }
+
+                            KeyLogger.Log("TAP STRAFE ENDED: Synthetic WASD active until physical release");
                         }
 
                         if (_macroCounter % 5 == 0)
@@ -535,7 +685,12 @@ namespace Rebind.Services
                     }
                 }
 
-                Thread.Sleep(3); 
+                // High-resolution hybrid sleep: sleep 2ms (1ms less than target) then spin-wait
+                // for the remaining time. This gives ~3ms intervals with <0.1ms jitter instead
+                // of Thread.Sleep(3)'s typical 5-15ms overshoot on Windows.
+                long targetTicks = _loopTimer.ElapsedTicks + (Stopwatch.Frequency * 3 / 1000);
+                Thread.Sleep(2);
+                while (_loopTimer.ElapsedTicks < targetTicks) { /* spin */ }
             }
         }
 

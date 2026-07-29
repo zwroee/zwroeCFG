@@ -188,5 +188,29 @@ namespace Rebind.Views
             };
             timer.Start();
         }
+
+        private void ViewLogButton_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                string logPath = KeyLogger.LogPath;
+                if (!System.IO.File.Exists(logPath))
+                {
+                    string? dir = System.IO.Path.GetDirectoryName(logPath);
+                    if (!string.IsNullOrEmpty(dir)) System.IO.Directory.CreateDirectory(dir);
+                    System.IO.File.WriteAllText(logPath, $"[{DateTime.Now:HH:mm:ss.fff}] Movement debug log initialized.\n");
+                }
+
+                System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
+                {
+                    FileName = logPath,
+                    UseShellExecute = true
+                });
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Unable to open log file: {ex.Message}", "Log Error", MessageBoxButton.OK, MessageBoxImage.Warning);
+            }
+        }
     }
 }

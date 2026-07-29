@@ -5,9 +5,9 @@
 
     <Page.Resources>
         <Style x:Key="ModernBindButton" TargetType="Button">
-            <Setter Property="Background" Value="#1E1E1E"/>
+            <Setter Property="Background" Value="#881E1E1E"/>
             <Setter Property="Foreground" Value="#AAA"/>
-            <Setter Property="BorderBrush" Value="#333"/>
+            <Setter Property="BorderBrush" Value="#444"/>
             <Setter Property="BorderThickness" Value="1"/>
             <Setter Property="Padding" Value="8,4"/>
             <Setter Property="FontSize" Value="11"/>
@@ -149,9 +149,18 @@
         </StackPanel>
 
         <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
-            <StackPanel>
+            <Grid>
+                <!-- Konata Mascot Background (Scrollable) -->
+                <Image Source="/konata2.png" HorizontalAlignment="Right" VerticalAlignment="Bottom" 
+                       Height="220" Stretch="Uniform" Margin="0,0,0,-10" IsHitTestVisible="False" Opacity="0.95">
+                    <Image.RenderTransform>
+                        <RotateTransform Angle="-15" CenterX="100" CenterY="180"/>
+                    </Image.RenderTransform>
+                </Image>
+                
+                <StackPanel>
                 <!-- FEATURES -->
-                <Border Background="#1A1A1A" CornerRadius="8" Padding="12" Margin="0,0,0,12">
+                <Border Background="#AA1A1A1A" CornerRadius="8" Padding="12" Margin="0,0,0,12">
                     <StackPanel>
                         <TextBlock Text="MACRO FEATURES" Foreground="#555" FontSize="9" FontWeight="Bold" Margin="0,0,0,10"/>
                         <Grid Margin="0,0,0,10">
@@ -166,7 +175,7 @@
                 </Border>
 
                 <!-- TECHNIQUE BINDINGS -->
-                <Border Background="#1A1A1A" CornerRadius="8" Padding="12" Margin="0,0,0,12">
+                <Border Background="#AA1A1A1A" CornerRadius="8" Padding="12" Margin="0,0,0,12">
                     <StackPanel>
                         <TextBlock Text="ELITE TECHNIQUES" Foreground="#555" FontSize="9" FontWeight="Bold" Margin="0,0,0,12"/>
                         
@@ -193,7 +202,7 @@
                 </Border>
 
                 <!-- MOVEMENT BINDINGS -->
-                <Border Background="#1A1A1A" CornerRadius="8" Padding="12" Margin="0,0,0,12">
+                <Border Background="#AA1A1A1A" CornerRadius="8" Padding="12" Margin="0,0,0,12">
                     <StackPanel>
                         <TextBlock Text="CORE MOVEMENT" Foreground="#555" FontSize="9" FontWeight="Bold" Margin="0,0,0,10"/>
                         <Grid Margin="0,0,0,8">
@@ -220,19 +229,24 @@
                 </Border>
 
                 <!-- SYSTEM -->
-                <Border Background="#1A1A1A" CornerRadius="8" Padding="12">
+                <Border Background="#AA1A1A1A" CornerRadius="8" Padding="12">
                     <StackPanel>
-                        <TextBlock Text="SYSTEM" Foreground="#555" FontSize="9" FontWeight="Bold" Margin="0,0,0,10"/>
-                        <Grid>
+                        <TextBlock Text="SYSTEM &amp; DEBUGGING" Foreground="#555" FontSize="9" FontWeight="Bold" Margin="0,0,0,10"/>
+                        <Grid Margin="0,0,0,8">
                             <TextBlock Text="Toggle Shortcut" Foreground="#AAA" VerticalAlignment="Center"/>
                             <Button x:Name="btnToggle" Style="{StaticResource ModernBindButton}" HorizontalAlignment="Right" Click="BindButton_Click"/>
+                        </Grid>
+                        <Grid>
+                            <TextBlock Text="Movement Log" Foreground="#AAA" VerticalAlignment="Center"/>
+                            <Button x:Name="btnViewLog" Content="VIEW LOG" Style="{StaticResource ModernBindButton}" HorizontalAlignment="Right" Click="ViewLogButton_Click"/>
                         </Grid>
                     </StackPanel>
                 </Border>
             </StackPanel>
+            </Grid>
         </ScrollViewer>
 
-        <Button Grid.Row="2" Content="SAVE CONFIGURATION" Background="#007ACC" Foreground="White" FontWeight="Bold" Height="36" Margin="0,15,0,0" BorderThickness="0" Click="SaveButton_Click">
+        <Button Grid.Row="2" Content="SAVE CONFIGURATION" Background="#AA007ACC" Foreground="White" FontWeight="Bold" Height="36" Margin="0,15,0,0" BorderThickness="0" Click="SaveButton_Click">
             <Button.Resources>
                 <Style TargetType="Border">
                     <Setter Property="CornerRadius" Value="6"/>

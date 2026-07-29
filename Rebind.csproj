@@ -19,6 +19,7 @@
        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
      </None>
      <Resource Include="konata.ico"/>
+     <Resource Include="konata2.png"/>
    </ItemGroup>
 
  </Project>

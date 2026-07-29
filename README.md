@@ -1,36 +1,47 @@
 # zwroe CFG
-# discord server https://discord.gg/DgJuRp2tj5
-## [Download link](https://github.com/zwroee/zwroeCFG/releases/tag/1.0)
-<img width="851" height="315" alt="0f12ddf51b7d3b57d06a993883f3c3b9" src="https://github.com/user-attachments/assets/5bd20935-0d49-4596-bec0-e34cfef6b246" />
 
-This is a custom MnK-to-Controller remapper for Apex Legends. I built this to get that perfect "original" movement feel without the clunkiness of standard remappers. It’s tuned for zero-latency lurching and aggressive strafing.
+A simple MnK-to-Controller movement remapper for Apex Legends. 
 
-Most other configs out there cost money even though they're simple. I'm keeping this free because paying for a remapper is a joke.
+100% free. Paying for remappers is dumb.
 
-## Getting Started
+[**Download Release**](https://github.com/zwroee/zwroeCFG/releases/tag/1.0) • [**Discord**](https://discord.gg/DgJuRp2tj5) • [**Ko-fi**](https://ko-fi.com/zwroe)
 
-1. **Install ViGEmBus**: You need this driver for the virtual controller to work. [Download it here](https://github.com/ViGEm/ViGEmBus/releases).
-2. **Steam Config**: Grab this layout [here](https://f7v3.short.gy/BPHHWR)—it's essential for the Jump/Lurch timing to hit correctly.
-3. **Run as Admin**: Right-click the app and run as Administrator (needed to block your physical keys for SnapTap).
-4. **In-Game Binds**: Make sure your **Jump** is set to **L1 / LB** in your controller settings.
+---
 
-## What's Inside
+## Features
 
-- **Scan-Code Tap Strafing**: A brand new tap-strafe engine that injects precise `I`, `J`, `K`, `L` keyboard lurches on top of analog controller momentum.
-- **SnapTap (SOCD)**: Instant A/D switching. The app mutes your physical keys so your movement is always crisp.
-- **Hyper Jump**: Perfect auto-bhopping. Just hold Space and enjoy the momentum.
-- **Fast Loot**: Hold g to vacuum up everything in a deathbox (spams E).
-- **Quick Toggle**: Hit **Insert** to turn everything on or off instantly.
+- **Tap Strafing**: Keyboard lurches on top of controller movement.
+- **SnapTap**: Clean A/D counter-strafing without keys getting stuck.
+- **Auto Jump**: Continuous bhops while holding Space.
+- **Fast Loot**: Spams `E` to quickly loot deathboxes.
+- **Quick Toggle**: Press **Insert** to turn on/off.
 
-## Just a heads up
+---
 
-- Run as Admin if you need key blocking.
-- Make sure you don't have DS4Windows or other remappers running at the same time.
+## Setup
 
-**If you try to sell this config youre a pussy.**
+1. **Install ViGEmBus**: Needed for virtual controller output. [Download ViGEmBus](https://github.com/ViGEm/ViGEmBus/releases).
+2. **Steam Layout**: Use this layout: [Steam Layout](https://f7v3.short.gy/BPHHWR).
+3. **Run as Admin**: Right-click the app and run as Admin (needed for key blocking).
 
-# gui
-<img width="825" height="679" alt="Screenshot 2026-05-02 083724" src="https://github.com/user-attachments/assets/7aa5d457-df12-4755-bcac-147772b833c5" />
+---
 
-# in game settings that are needed for the config to work.
-<img width="709" height="290" alt="Screenshot 2026-05-02 083805" src="https://github.com/user-attachments/assets/b0cd76ea-93c5-406c-9c07-ece032f1a96f" />
+## Notes
+
+- Run as Admin for key blocking to work.
+- Make sure DS4Windows or other remappers aren't running.
+- Don't buy or sell this config.
+
+---
+
+## Screenshots
+
+### App
+<img width="825" alt="GUI" src="https://github.com/user-attachments/assets/7aa5d457-df12-4755-bcac-147772b833c5" />
+
+### In-Game Settings
+<img width="709" alt="Settings" src="https://github.com/user-attachments/assets/b0cd76ea-93c5-406c-9c07-ece032f1a96f" />
+
+---
+
+If you want to support, you can [buy me a coffee on Ko-fi](https://ko-fi.com/zwroe).
