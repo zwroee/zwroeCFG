@@ -16,6 +16,8 @@ namespace Rebind.Core.Models
         public string? DPadUp { get; set; } = "X";
         /// <summary>Keyboard key mapped to the controller's DPad Down (Superglide).</summary>
         public string? DPadDown { get; set; } = "V";
+        /// <summary>Your in-game FPS cap. Used to calculate the exact 1-frame window for superglide timing.</summary>
+        public int SuperglideFps { get; set; } = 144;
         public string? DPadLeft { get; set; }
         /// <summary>Keyboard key mapped to the controller's DPad Right.</summary>
         public string? DPadRight { get; set; }
@@ -35,8 +37,17 @@ namespace Rebind.Core.Models
         /// <summary>Keyboard key used for the inspect-spam N helper.</summary>
         public string? InspectKey { get; set; } = "G";
 
+        /// <summary>Delay in milliseconds between inspect key toggles when spamming inspect.</summary>
+        public int InspectDelayMs { get; set; } = 30;
+
         /// <summary>Enables or disables the Tap Strafe (Lurch) macro engine.</summary>
         public bool IsStrafeEnabled { get; set; } = false;
+
+        /// <summary>Trigger key bound to start tap strafe (defaults to Space).</summary>
+        public string? TapStrafeKey { get; set; } = "Space";
+
+        /// <summary>When true, tap strafe triggers in toggle mode instead of hold mode.</summary>
+        public bool IsStrafeToggleMode { get; set; } = false;
 
         /// <summary>Enables or disables the optional continuous jump pulse.</summary>
         public bool IsJumpSpamEnabled { get; set; } = false;

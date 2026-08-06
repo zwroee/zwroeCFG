@@ -57,9 +57,17 @@ namespace Rebind.Views
             btnDPadDown.Content = _config.DPadDown;
             btnDPadRight.Content = _config.FastLootKey;
             btnInspect.Content = _config.InspectKey;
+            btnTapStrafeKey.Content = _config.TapStrafeKey ?? "Space";
             
             togStrafe.IsChecked = _config.IsStrafeEnabled;
             togJump.IsChecked = _config.IsJumpSpamEnabled;
+            if (_config.IsStrafeToggleMode)
+                radStrafeToggle.IsChecked = true;
+            else
+                radStrafeHold.IsChecked = true;
+
+            txtSuperglideFps.Text = _config.SuperglideFps.ToString();
+            txtInspectDelayMs.Text = _config.InspectDelayMs.ToString();
         }
 
         private void SaveConfigFromUI()
@@ -75,9 +83,15 @@ namespace Rebind.Views
             _config.DPadDown = btnDPadDown.Content?.ToString();
             _config.FastLootKey = btnDPadRight.Content?.ToString();
             _config.InspectKey = btnInspect.Content?.ToString();
+            _config.TapStrafeKey = btnTapStrafeKey.Content?.ToString();
             
             _config.IsStrafeEnabled = togStrafe.IsChecked ?? false;
+            _config.IsStrafeToggleMode = radStrafeToggle.IsChecked ?? false;
             _config.IsJumpSpamEnabled = togJump.IsChecked ?? false;
+            if (int.TryParse(txtSuperglideFps.Text, out int fps) && fps >= 30)
+                _config.SuperglideFps = fps;
+            if (int.TryParse(txtInspectDelayMs.Text, out int delayMs) && delayMs >= 5)
+                _config.InspectDelayMs = delayMs;
 
             _configManager.SaveConfig(_config);
             App.KeyMapper?.ReloadConfig();
@@ -86,6 +100,27 @@ namespace Rebind.Views
         private void Setting_Changed(object sender, RoutedEventArgs e)
         {
             SaveConfigFromUI();
+        }
+
+        private void SuperglideFps_Changed(object sender, TextChangedEventArgs e)
+        {
+            // Only save when a valid number is typed to avoid saving on partial input
+            if (int.TryParse(txtSuperglideFps.Text, out int fps) && fps >= 30)
+            {
+                _config.SuperglideFps = fps;
+                _configManager.SaveConfig(_config);
+                App.KeyMapper?.ReloadConfig();
+            }
+        }
+
+        private void InspectDelayMs_Changed(object sender, TextChangedEventArgs e)
+        {
+            if (int.TryParse(txtInspectDelayMs.Text, out int delayMs) && delayMs >= 5)
+            {
+                _config.InspectDelayMs = delayMs;
+                _configManager.SaveConfig(_config);
+                App.KeyMapper?.ReloadConfig();
+            }
         }
 
         private void BindButton_Click(object sender, RoutedEventArgs e)
